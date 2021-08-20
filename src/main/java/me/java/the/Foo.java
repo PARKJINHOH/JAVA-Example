@@ -1,7 +1,11 @@
 package me.java.the;
 
-import java.util.*;
-import java.util.function.*;
+import javax.print.attribute.standard.MediaSize;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Foo {
     public static void main(String[] args) {
@@ -12,38 +16,44 @@ public class Foo {
         names.add("jino");
         names.add("illihe");
 
-        // 출력 1번째(forEach)
-        System.out.println("==========1");
-        names.forEach((s) -> {
+        Stream<String> stringStream = names.stream().map(String::toUpperCase);
+        names.forEach(System.out::println); // 바뀌지 않는다.
+        stringStream.forEach(System.out::println);
+
+        System.out.println("================");
+
+        // 중계형 operator(연산자)만 있으면 실행되지 않는다.
+        names.stream().map((s) -> {
             System.out.println(s);
+            return s.toUpperCase();
         });
-        // 출력 2번째(forEach 간결)
-        System.out.println("==========2");
-        names.forEach(System.out::println);
 
-        // 출력 3번째 (Spliterator)
-        System.out.println("==========3");
-        Spliterator<String> spliterator = names.spliterator();
-        while ( spliterator.tryAdvance(System.out::println));
+        System.out.println("================");
 
-        // 출력 4번째 (removeIf)
-        System.out.println("==========4");
-        names.removeIf(s -> s.startsWith("j"));
-        names.forEach(System.out::println);
-
-        // 출력 5번째 (Comparator)
-        System.out.println("==========5");
-        names.sort(String::compareToIgnoreCase);
-        names.forEach(System.out::println);
-
-
-
-        // static 메소드 및 default 메소드는 Notion 참조
-        Comparator<String> compareToIgnoreCase = String::compareToIgnoreCase;
-        names.sort(compareToIgnoreCase.reversed());
+        // 종료형 operator가 있어야 중계형 operator도 실행이 된다.
+        List<String> collect = names.stream().map((s) -> {
+            System.out.println(s); // (중계형)
+            return s.toUpperCase();
+        }).collect(Collectors.toList());
+        collect.forEach(System.out::println);
 
 
 
 
+
+        System.out.println("=========================");
+
+        // 병렬 처리
+        List<String> collect1 = names.stream().map(String::toUpperCase).collect(Collectors.toList());
+        collect1.forEach(System.out::println);
+
+        System.out.println("=========== 심화");
+
+        // 병렬 처리 심화
+        List<String> collect2 = names.parallelStream().map((s) -> {
+            System.out.println(s + " " + Thread.currentThread().getName());
+            return s.toUpperCase();
+        }).collect(Collectors.toList());
+        collect2.forEach(System.out::println);
     }
 }
