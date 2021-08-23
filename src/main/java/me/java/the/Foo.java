@@ -1,58 +1,67 @@
 package me.java.the;
 
-import javax.print.attribute.standard.MediaSize;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+
 import java.util.Locale;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.concurrent.*;
 
 public class Foo {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
 
-        List<OnlineClass> springClasses = new ArrayList<>();
-        springClasses.add(new OnlineClass(1, "spring boot", true));
-        springClasses.add(new OnlineClass(5, "rest api", false));
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-        Optional<OnlineClass> optional = springClasses.stream()
-                .filter(onlineClass -> onlineClass.getTitle().startsWith("jpa"))
-                .findFirst();
-        boolean present = optional.isPresent();
-        System.out.println(present);
+        Callable<String> hello = () -> {
+            Thread.sleep(1000L);
+            return "Hello";
+        };
 
-        // 만약 찾는 값이 없으면 NoSuchElementException 발생
-//        OnlineClass onlineClass = optional.get();
-//        System.out.println(onlineClass.getTitle());
+        Future<String> helloFuture = executorService.submit(hello);
+        System.out.println(helloFuture.isDone());
+        System.out.println("Started");
 
-        // Optional - ifPresent
-        // ifPresent : 값이 있으면 () 실행해라
-        optional.ifPresent(onlineClass -> System.out.println(onlineClass.getTitle()));
+        // get()이 시작되는 순간 기다린다.
+        // blocking
+        helloFuture.get();
 
-        // orElse는 찾는게 있던 없던 createNEwClass는 실행이 된다.
-        // -> orElseGet을 사용하여 있으면 실행되지 않게 만들자
-        OnlineClass onlineClass = optional.orElse(createNewClass());
+        System.out.println("End");
 
-        OnlineClass onlineClassGet = optional.orElseGet(() -> createNewClass());
+        executorService.shutdown();
 
 
-        // 만들어 줄 수 있는게 아니라면 Exception을 발생.
-//        OnlineClass onlineClassThrow = optional.orElseThrow(IllegalArgumentException::new);
+        System.out.println("===============================================");
+        // ---------------------- CompletableFuture ------------------- //
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("jinho");
+
+        System.out.println(future.get());
+
+        // 여기까지는 별 다를 께 없다.
+
+        // thenApply(Function): 리턴값을 받아서 다른 값으로 바꾸는 콜백
+        // thenAccept(Consumer): 리턴값을 또 다른 작업을 처리하는 콜백 (리턴없이)
+        // thenRun(Runnable): 리턴값 받고 다른 작업을 처리하는 콜백
+        CompletableFuture<Void> future2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println("Hello " + Thread.currentThread().getName());
+            return "Hello";
+        }).thenAccept((s) -> { // return
+            System.out.println("Hello Accept " + Thread.currentThread().getName());
+            System.out.println(s.toUpperCase());
+        });
+
+        future2.get();
 
 
-        // filter에 있으면 출력, 없으면 empty 출력(반환은 Optional)
-        Optional<OnlineClass> onlineClassfilter = optional.filter(onlineClass1 -> !onlineClass.isClosed());
+        CompletableFuture<String> hello2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println("hello2 " + Thread.currentThread().getName());
+            return "hello2";
+        });
 
-        // map
-        // Optional 내부에 Optional이 들어 있을 때.
-        Optional<Optional<Progress>> progress1 = optional.map(OnlineClass::getProgress);
-        Optional<Progress> progress = progress1.orElse(Optional.empty());
+        CompletableFuture<String> world2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println("world2 " + Thread.currentThread().getName());
+            return "world2";
+        });
+
+        
 
 
-    }
-
-    private static OnlineClass createNewClass() {
-        return new OnlineClass(10, "new Class", false);
     }
 }
